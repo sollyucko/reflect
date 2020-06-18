@@ -69,7 +69,7 @@ fn test_generics2() {
         ex.make_trait_impl(RUNTIME::generic::Generic, ex.target_type(), |block| {
             block.make_function(RUNTIME::generic::Generic::generic, |make_function| {
                 let reciever = make_function.arg(0);
-                match reciever.data() {
+                match reciever.as_data() {
                     Data::Struct(Struct::Struct(receiver)) => {
                         let mut fields = receiver.fields();
                         let one = fields.next().unwrap().get_value();

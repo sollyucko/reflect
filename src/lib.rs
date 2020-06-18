@@ -160,7 +160,7 @@
 //!     let receiver = f.arg(0);
 //!     let formatter = f.arg(1);
 //!
-//!     match receiver.data() {
+//!     match receiver.as_data() {
 //!         Data::Struct(receiver) => match receiver {
 //!             Struct::Unit(receiver) => unimplemented!(),
 //!             Struct::Tuple(receiver) => unimplemented!(),
@@ -225,7 +225,7 @@
 //! # ) -> Value {
 //! let builder = RUNTIME::std::fmt::Formatter::debug_struct
 //!     .INVOKE(formatter, type_name)
-//!     .reference_mut();
+//!     .new_reference_mut();
 //!
 //! for field in receiver.fields() {
 //!     RUNTIME::std::fmt::DebugStruct::field.INVOKE(
@@ -296,7 +296,7 @@
 //! # ignore! {
 //! let wrapper: reflect::Type = reflect::new_struct_type();
 //!
-//! wrapper.instantiate(vec![input.get_field("x").reference()])
+//! wrapper.instantiate(vec![input.get_field("x").new_reference()])
 //! # }
 //! ```
 //!

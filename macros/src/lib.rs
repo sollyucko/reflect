@@ -707,7 +707,7 @@ fn to_runtime_type(ty: &Type, mod_path: &Path, params: &[&GenericParam]) -> Toke
         Type::Tuple(types) => {
             let types = types.iter().map(|ty| to_runtime_type(ty, mod_path, params));
             quote! {
-                _reflect::Type::tuple(&[#(#types),*])
+                _reflect::Type::new_tuple(&[#(#types),*])
             }
         }
         Type::Path(path) => {
@@ -716,7 +716,7 @@ fn to_runtime_type(ty: &Type, mod_path: &Path, params: &[&GenericParam]) -> Toke
                 if ident_is_param(ident, params) {
                     let type_param = ident.to_string();
                     return quote! {
-                        _reflect::Type::type_param_from_str(#type_param, param_map)
+                        _reflect::Type::new_type_param_from_str(#type_param, param_map)
                     };
                 }
             }
@@ -732,7 +732,7 @@ fn to_runtime_type(ty: &Type, mod_path: &Path, params: &[&GenericParam]) -> Toke
                 .map(|bound| bound.to_token_stream().to_string());
 
             quote! {
-                _reflect::Type::get_trait_object(&[#(#bound_strings),*], param_map)
+                _reflect::Type::new_trait_object(&[#(#bound_strings),*], param_map)
             }
         }
 
@@ -745,11 +745,11 @@ fn to_runtime_type(ty: &Type, mod_path: &Path, params: &[&GenericParam]) -> Toke
             if let Some(lifetime) = lifetime {
                 let lifetime_str = lifetime.to_string();
                 quote! {
-                    #inner.reference_with_lifetime(#lifetime_str, param_map)
+                    #inner.new_reference_with_lifetime(#lifetime_str, param_map)
                 }
             } else {
                 quote! {
-                    #inner.reference()
+                    #inner.new_reference()
                 }
             }
         }
@@ -760,11 +760,11 @@ fn to_runtime_type(ty: &Type, mod_path: &Path, params: &[&GenericParam]) -> Toke
             if let Some(lifetime) = lifetime {
                 let lifetime_str = lifetime.to_string();
                 quote! {
-                    #inner.reference_mut_with_lifetime(#lifetime_str, param_map)
+                    #inner.new_reference_mut_with_lifetime(#lifetime_str, param_map)
                 }
             } else {
                 quote! {
-                    #inner.reference_mut()
+                    #inner.new_reference_mut()
                 }
             }
         }

@@ -37,21 +37,21 @@ pub(crate) struct DataStructure {
 }
 
 impl Type {
-    pub fn unit() -> Self {
+    pub fn new_unit() -> Self {
         Self(TypeNode::Tuple(Vec::new()))
     }
 
-    pub fn tuple(types: &[Self]) -> Self {
+    pub fn new_tuple(types: &[Self]) -> Self {
         Self(TypeNode::Tuple(
             types.iter().cloned().map(|ty| ty.0).collect(),
         ))
     }
 
-    pub fn primitive_str() -> Self {
+    pub fn new_primitive_str() -> Self {
         Self(TypeNode::PrimitiveStr)
     }
 
-    pub fn reference(&self) -> Self {
+    pub fn new_reference(&self) -> Self {
         Self(TypeNode::Reference {
             is_mut: false,
             lifetime: None,
@@ -59,7 +59,7 @@ impl Type {
         })
     }
 
-    pub fn reference_with_lifetime(&self, lifetime: &str, param_map: &SynParamMap) -> Self {
+    pub fn new_reference_with_lifetime(&self, lifetime: &str, param_map: &SynParamMap) -> Self {
         let lifetime = param_map.get_lifetime(lifetime);
 
         Self(TypeNode::Reference {
@@ -69,7 +69,7 @@ impl Type {
         })
     }
 
-    pub fn reference_mut(&self) -> Self {
+    pub fn new_reference_mut(&self) -> Self {
         Self(TypeNode::Reference {
             is_mut: true,
             lifetime: None,
@@ -77,7 +77,7 @@ impl Type {
         })
     }
 
-    pub fn reference_mut_with_lifetime(&self, lifetime: &str, param_map: &SynParamMap) -> Self {
+    pub fn new_reference_mut_with_lifetime(&self, lifetime: &str, param_map: &SynParamMap) -> Self {
         let lifetime = param_map.get_lifetime(lifetime);
 
         Self(TypeNode::Reference {
@@ -94,14 +94,14 @@ impl Type {
         }
     }
 
-    pub fn data(&self) -> Data<Self> {
+    pub fn as_data(&self) -> Data<Self> {
         match &self.0 {
             TypeNode::DataStructure(data) => data.data.clone().map(|field| field.element),
             TypeNode::Reference {
                 is_mut,
                 lifetime,
                 inner,
-            } => Self((**inner).clone()).data().map(|field| {
+            } => Self((**inner).clone()).as_data().map(|field| {
                 Self(TypeNode::Reference {
                     is_mut: *is_mut,
                     lifetime: *lifetime,
@@ -113,7 +113,7 @@ impl Type {
     }
 
     /// Returns a `Type` from a `Tuple` or `TupleStruct`
-    pub fn get_index(&self, index: usize) -> Self {
+    pub fn index(&self, index: usize) -> Self {
         match &self.0 {
             TypeNode::Tuple(types) => Self(types[index].clone()),
             TypeNode::DataStructure(data) => {
@@ -127,7 +127,7 @@ impl Type {
         }
     }
 
-    pub fn get_trait_object(type_param_bounds: &[&str], param_map: &mut SynParamMap) -> Self {
+    pub fn new_trait_object(type_param_bounds: &[&str], param_map: &mut SynParamMap) -> Self {
         Self(TypeNode::TraitObject(
             type_param_bounds
                 .iter()
@@ -136,7 +136,7 @@ impl Type {
         ))
     }
 
-    pub fn type_param_from_str(type_param: &str, param_map: &mut SynParamMap) -> Self {
+    pub fn new_type_param_from_str(type_param: &str, param_map: &mut SynParamMap) -> Self {
         if let Some(&param) = param_map.get(type_param) {
             Self(TypeNode::TypeParam(
                 param
@@ -186,7 +186,7 @@ impl Type {
 
             syn::Type::Tuple(type_tuple) => {
                 if type_tuple.elems.is_empty() {
-                    Self::unit()
+                    Self::new_unit()
                 } else if type_tuple.elems.len() == 1 && !type_tuple.elems.trailing_punct() {
                     // It is not a tuple. The parentheses were just used to
                     // disambiguate the type.

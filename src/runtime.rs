@@ -41,7 +41,7 @@ pub mod prelude {
 
     impl RuntimeType for str {
         fn SELF(self) -> Type {
-            Type::primitive_str()
+            Type::new_primitive_str()
         }
     }
 }

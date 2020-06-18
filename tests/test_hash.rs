@@ -23,7 +23,7 @@ fn make_hash(f: MakeFunction) -> Value {
     let receiver = f.arg(0);
     let hasher = f.arg(1);
 
-    match receiver.data() {
+    match receiver.as_data() {
         Data::Struct(receiver) => match receiver {
             Struct::Unit(_receiver) => unimplemented!(),
             Struct::Tuple(_receiver) => unimplemented!(),

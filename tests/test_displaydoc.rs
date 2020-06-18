@@ -31,7 +31,7 @@ fn display_fmt(f: MakeFunction) -> Value {
     let formatter = f.arg(1);
 
     let type_name = receiver.get_type_name();
-    match receiver.data() {
+    match receiver.as_data() {
         Data::Struct(receiver) => match receiver {
             Struct::Unit(_receiver) => unimplemented!(),
             Struct::Tuple(_receiver) => unimplemented!(),

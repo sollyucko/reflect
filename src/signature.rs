@@ -88,7 +88,7 @@ impl Signature {
             generics: Generics::default(),
             receiver: Receiver::NoSelf,
             inputs: Vec::new(),
-            output: Type::unit(),
+            output: Type::new_unit(),
         }
     }
 

@@ -35,14 +35,14 @@ fn debug_fmt(f: MakeFunction) -> Value {
 
     let type_name = receiver.get_type_name();
 
-    match receiver.data() {
+    match receiver.as_data() {
         Data::Struct(receiver) => match receiver {
             Struct::Unit(_receiver) => unimplemented!(),
             Struct::Tuple(_receiver) => unimplemented!(),
             Struct::Struct(receiver) => {
                 let builder = RUNTIME::std::fmt::Formatter::debug_struct
                     .INVOKE(formatter, type_name)
-                    .reference_mut();
+                    .new_reference_mut();
 
                 for field in receiver.fields() {
                     RUNTIME::std::fmt::DebugStruct::field.INVOKE(

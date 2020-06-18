@@ -13,7 +13,7 @@ fn derive(ex: Execution) {
     ex.make_trait_impl(RUNTIME::base::Trait, ex.target_type(), |block| {
         block.make_function(RUNTIME::base::Trait::trivial, |make_function| {
             let receiver = make_function.arg(0);
-            match receiver.data() {
+            match receiver.as_data() {
                 Data::Struct(Struct::Struct(receiver)) => {
                     for field in receiver.fields() {
                         if should_skip(&field) {

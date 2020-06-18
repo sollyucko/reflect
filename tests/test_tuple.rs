@@ -14,14 +14,14 @@ fn derive(ex: Execution) {
     ex.make_trait_impl(RUNTIME::tuple::Tuple, ex.target_type(), |block| {
         block.make_function(RUNTIME::tuple::Tuple::swap, |make_function| {
             let tuple = make_function.arg(0);
-            let (t, u) = (tuple.get_index(0), tuple.get_index(1));
-            Value::tuple(&[u, t])
+            let (t, u) = (tuple.index(0), tuple.index(1));
+            Value::new_tuple(&[u, t])
         });
 
         block.make_function(RUNTIME::tuple::Tuple::to_tuple, |make_function| {
             let receiver = make_function.arg(0);
-            let (t, u) = (receiver.get_index(0), receiver.get_index(1));
-            Value::tuple(&[t, u])
+            let (t, u) = (receiver.index(0), receiver.index(1));
+            Value::new_tuple(&[t, u])
         });
     });
 }

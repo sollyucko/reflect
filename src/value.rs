@@ -9,14 +9,14 @@ pub struct Value {
 }
 
 impl Value {
-    pub fn tuple(values: &[Self]) -> Self {
+    pub fn new_tuple(values: &[Self]) -> Self {
         let node = ValueNode::Tuple(values.iter().map(|v| v.index).collect());
         Self {
             index: VALUES.index_push(node),
         }
     }
 
-    pub fn reference(&self) -> Self {
+    pub fn new_reference(&self) -> Self {
         let node = ValueNode::Reference {
             is_mut: false,
             value: self.index,
@@ -26,7 +26,7 @@ impl Value {
         }
     }
 
-    pub fn reference_mut(&self) -> Self {
+    pub fn new_reference_mut(&self) -> Self {
         let node = ValueNode::Reference {
             is_mut: true,
             value: self.index,
@@ -55,21 +55,22 @@ impl Value {
         }
     }
 
-    pub fn data(&self) -> Data<Self> {
+    pub fn as_data(&self) -> Data<Self> {
         use crate::ValueNode::*;
         match self.node() {
             DataStructure { data, .. } => data.map(|value_ref| Self {
                 index: value_ref.element,
             }),
+            #[rustfmt::skip]
             Reference { is_mut, value } if !is_mut => {
-                Self { index: value }.data().map(|v| v.element.reference())
-            }
+                Self { index: value }.as_data().map(|v| v.element.new_reference())
+            },
             #[rustfmt::skip]
             Reference { is_mut, value } if is_mut => {
-                Self { index: value }.data().map(|v| v.element.reference_mut())
+                Self { index: value }.as_data().map(|v| v.element.new_reference_mut())
             },
             // FIXME generate match and propagate the binding
-            Binding { name, ty } => ty.data().map(|field| {
+            Binding { name, ty } => ty.as_data().map(|field| {
                 let node = ValueNode::Destructure {
                     parent: self.index,
                     accessor: field.accessor.clone(),
@@ -84,7 +85,7 @@ impl Value {
     }
 
     /// Returns a `Value` from a `Tuple` or `TupleStruct`
-    pub fn get_index(&self, index: usize) -> Self {
+    pub fn index(&self, index: usize) -> Self {
         match self.index.node() {
             ValueNode::Tuple(values) => Self {
                 index: values[index],
