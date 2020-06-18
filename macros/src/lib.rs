@@ -707,7 +707,7 @@ fn to_runtime_type(ty: &Type, mod_path: &Path, params: &[&GenericParam]) -> Toke
         Type::Tuple(types) => {
             let types = types.iter().map(|ty| to_runtime_type(ty, mod_path, params));
             quote! {
-                _reflect::Type::new_tuple(&[#(#types),*])
+                _reflect::TypeNode::new_tuple(&[#(#types),*])
             }
         }
         Type::Path(path) => {
@@ -716,7 +716,7 @@ fn to_runtime_type(ty: &Type, mod_path: &Path, params: &[&GenericParam]) -> Toke
                 if ident_is_param(ident, params) {
                     let type_param = ident.to_string();
                     return quote! {
-                        _reflect::Type::new_type_param_from_str(#type_param, param_map)
+                        _reflect::TypeNode::new_type_param_from_str(#type_param, param_map)
                     };
                 }
             }
@@ -732,7 +732,7 @@ fn to_runtime_type(ty: &Type, mod_path: &Path, params: &[&GenericParam]) -> Toke
                 .map(|bound| bound.to_token_stream().to_string());
 
             quote! {
-                _reflect::Type::new_trait_object(&[#(#bound_strings),*], param_map)
+                _reflect::TypeNode::new_trait_object(&[#(#bound_strings),*], param_map)
             }
         }
 

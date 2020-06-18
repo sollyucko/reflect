@@ -1,10 +1,10 @@
-use crate::{Ident, MakeImpl, Module, Parent, Path, RuntimeTrait, RuntimeType, Type, WipImpl};
+use crate::{Ident, MakeImpl, Module, Parent, Path, RuntimeTrait, RuntimeType, TypeNode, WipImpl};
 use std::cell::RefCell;
 use std::rc::Rc;
 
 #[derive(Clone, Copy)]
 pub struct Execution<'a> {
-    pub(crate) ty: &'a Type,
+    pub(crate) ty: &'a TypeNode,
     pub(crate) tracker: &'a Tracker,
 }
 
@@ -32,7 +32,7 @@ impl<'a> Execution<'a> {
             .make_trait_impl(trait_type.SELF(), self_type.SELF(), run);
     }
 
-    pub fn target_type(self) -> Type {
+    pub fn target_type(self) -> TypeNode {
         self.ty.clone()
     }
 }
@@ -52,7 +52,7 @@ impl Tracker {
         }
     }
 
-    fn make_trait_impl(&self, trait_ty: Rc<Parent>, ty: Type, run: fn(MakeImpl)) {
+    fn make_trait_impl(&self, trait_ty: Rc<Parent>, ty: TypeNode, run: fn(MakeImpl)) {
         let wip = WipImpl {
             trait_ty: Some(trait_ty),
             ty,

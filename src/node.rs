@@ -1,6 +1,6 @@
 use crate::{
-    Accessor, Data, GlobalBorrow, Ident, InvokeRef, MacroInvokeRef, Type, TypeNode, ValueRef,
-    INVOKES, VALUES,
+    Accessor, Data, GlobalBorrow, Ident, InvokeRef, MacroInvokeRef, TypeNode, ValueRef, INVOKES,
+    VALUES,
 };
 
 #[derive(Debug, Clone)]
@@ -15,7 +15,7 @@ pub(crate) enum ValueNode {
     Dereference(ValueRef),
     Binding {
         name: Ident,
-        ty: Type,
+        ty: TypeNode,
     },
     DataStructure {
         name: String,
@@ -25,23 +25,23 @@ pub(crate) enum ValueNode {
     Destructure {
         parent: ValueRef,
         accessor: Accessor,
-        ty: Type,
+        ty: TypeNode,
     },
     MacroInvocation(MacroInvokeRef),
 }
 
 impl ValueNode {
-    pub fn get_type(&self) -> Type {
+    pub fn get_type(&self) -> TypeNode {
         match self {
-            Self::Tuple(types) => Type(TypeNode::Tuple(
-                types.iter().map(|type_ref| type_ref.get_type().0).collect(),
-            )),
-            Self::Str(_) => Type(TypeNode::PrimitiveStr),
-            Self::Reference { is_mut, value } => Type(TypeNode::Reference {
+            Self::Tuple(types) => {
+                TypeNode::Tuple(types.iter().map(|type_ref| type_ref.get_type()).collect())
+            }
+            Self::Str(_) => TypeNode::PrimitiveStr,
+            Self::Reference { is_mut, value } => TypeNode::Reference {
                 is_mut: *is_mut,
                 lifetime: None,
-                inner: Box::new(value.get_type().0),
-            }),
+                inner: Box::new(value.get_type()),
+            },
             Self::Binding { ty, .. } => ty.clone(),
             Self::Destructure {
                 parent,
@@ -78,15 +78,14 @@ impl ValueNode {
             Self::Str(_) => Self::Str(String::from("str")),
             Self::DataStructure { name, .. } => Self::Str(name.to_owned()),
             Self::Reference { value, .. } => value.get_type_name(),
-            Self::Binding { ty, .. } => Self::Str(ty.0.get_name()),
+            Self::Binding { ty, .. } => Self::Str(ty.get_name()),
             Self::Destructure {
                 parent,
                 accessor,
                 ty,
-            } => Self::Str(ty.0.get_name()),
+            } => Self::Str(ty.get_name()),
             Self::Invoke(invoke_ref) => Self::Str(
-                INVOKES
-                    .with_borrow(|invokes| invokes[invoke_ref.0].function.sig.output.0.get_name()),
+                INVOKES.with_borrow(|invokes| invokes[invoke_ref.0].function.sig.output.get_name()),
             ),
             node => panic!("ValueNode::get_type_name"),
         }
@@ -94,7 +93,7 @@ impl ValueNode {
 }
 
 impl ValueRef {
-    pub(crate) fn get_type(self) -> Type {
+    pub(crate) fn get_type(self) -> TypeNode {
         VALUES.with_borrow(|values| values[self.0].get_type())
     }
 

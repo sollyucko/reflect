@@ -1,6 +1,6 @@
 use crate::{
     global_data, Accessor, CompleteFunction, CompleteImpl, Data, DataStructure, Enum, Execution,
-    Field, Generics, Ident, Program, Struct, StructStruct, Tracker, TupleStruct, Type, TypeNode,
+    Field, Generics, Ident, Program, Struct, StructStruct, Tracker, TupleStruct, TypeNode,
     UnitStruct, WipFunction, WipImpl,
 };
 use proc_macro2::TokenStream;
@@ -30,7 +30,7 @@ fn derive2(input: TokenStream, run: fn(Execution)) -> TokenStream {
     program.compile()
 }
 
-fn syn_to_type(input: DeriveInput) -> Type {
+fn syn_to_type(input: DeriveInput) -> TypeNode {
     let attrs: Vec<_> = input
         .attrs
         .into_iter()
@@ -47,7 +47,7 @@ fn syn_to_type(input: DeriveInput) -> Type {
                     .map(|field| Field {
                         attrs: field.attrs,
                         accessor: Accessor::Name(Ident::from(field.ident.unwrap())),
-                        element: Type::syn_to_type(field.ty, &mut generics.param_map),
+                        element: TypeNode::syn_to_type(field.ty, &mut generics.param_map),
                     })
                     .collect(),
                 attrs,
@@ -60,7 +60,7 @@ fn syn_to_type(input: DeriveInput) -> Type {
                     .map(|(i, field)| Field {
                         attrs: field.attrs,
                         accessor: Accessor::Index(i),
-                        element: Type::syn_to_type(field.ty, &mut generics.param_map),
+                        element: TypeNode::syn_to_type(field.ty, &mut generics.param_map),
                     })
                     .collect(),
                 attrs,
@@ -77,11 +77,11 @@ fn syn_to_type(input: DeriveInput) -> Type {
         syn::Data::Union(_) => unimplemented!("union"),
     };
 
-    Type(TypeNode::DataStructure(Box::new(DataStructure {
+    TypeNode::DataStructure(Box::new(DataStructure {
         name: Ident::from(input.ident),
         generics,
         data,
-    })))
+    }))
 }
 
 fn tracker_to_program(tracker: Tracker) -> Program {

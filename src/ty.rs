@@ -9,11 +9,8 @@ use std::fmt::Debug;
 use syn::TypePath;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[repr(C)]
-pub struct Type(pub(crate) TypeNode);
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub(crate) enum TypeNode {
+#[non_exhaustive]
+pub enum TypeNode {
     Infer,
     Tuple(Vec<TypeNode>),
     PrimitiveStr,
@@ -30,83 +27,79 @@ pub(crate) enum TypeNode {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub(crate) struct DataStructure {
+pub struct DataStructure {
     pub name: Ident,
     pub generics: Generics,
-    pub data: Data<Type>,
+    pub data: Data<TypeNode>,
 }
 
-impl Type {
+impl TypeNode {
     pub fn new_unit() -> Self {
-        Self(TypeNode::Tuple(Vec::new()))
+        TypeNode::Tuple(Vec::new())
     }
 
     pub fn new_tuple(types: &[Self]) -> Self {
-        Self(TypeNode::Tuple(
-            types.iter().cloned().map(|ty| ty.0).collect(),
-        ))
+        TypeNode::Tuple(types.to_vec())
     }
 
     pub fn new_primitive_str() -> Self {
-        Self(TypeNode::PrimitiveStr)
+        TypeNode::PrimitiveStr
     }
 
     pub fn new_reference(&self) -> Self {
-        Self(TypeNode::Reference {
+        TypeNode::Reference {
             is_mut: false,
             lifetime: None,
-            inner: Box::new(self.0.clone()),
-        })
+            inner: Box::new(self.clone()),
+        }
     }
 
     pub fn new_reference_with_lifetime(&self, lifetime: &str, param_map: &SynParamMap) -> Self {
         let lifetime = param_map.get_lifetime(lifetime);
 
-        Self(TypeNode::Reference {
+        TypeNode::Reference {
             is_mut: false,
             lifetime: Some(lifetime),
-            inner: Box::new(self.0.clone()),
-        })
+            inner: Box::new(self.clone()),
+        }
     }
 
     pub fn new_reference_mut(&self) -> Self {
-        Self(TypeNode::Reference {
+        TypeNode::Reference {
             is_mut: true,
             lifetime: None,
-            inner: Box::new(self.0.clone()),
-        })
+            inner: Box::new(self.clone()),
+        }
     }
 
     pub fn new_reference_mut_with_lifetime(&self, lifetime: &str, param_map: &SynParamMap) -> Self {
         let lifetime = param_map.get_lifetime(lifetime);
 
-        Self(TypeNode::Reference {
+        TypeNode::Reference {
             is_mut: true,
             lifetime: Some(lifetime),
-            inner: Box::new(self.0.clone()),
-        })
+            inner: Box::new(self.clone()),
+        }
     }
 
     pub fn dereference(&self) -> Self {
-        match &self.0 {
-            TypeNode::Reference { inner, .. } => Self((**inner).clone()),
-            other => Self(TypeNode::Dereference(Box::new(other.clone()))),
+        match self {
+            TypeNode::Reference { inner, .. } => (**inner).clone(),
+            other => TypeNode::Dereference(Box::new(other.clone())),
         }
     }
 
     pub fn as_data(&self) -> Data<Self> {
-        match &self.0 {
+        match self {
             TypeNode::DataStructure(data) => data.data.clone().map(|field| field.element),
             TypeNode::Reference {
                 is_mut,
                 lifetime,
                 inner,
-            } => Self((**inner).clone()).as_data().map(|field| {
-                Self(TypeNode::Reference {
-                    is_mut: *is_mut,
-                    lifetime: *lifetime,
-                    inner: Box::new(field.element.0),
-                })
+            } => inner.clone().as_data().map(|field| TypeNode::Reference {
+                is_mut: *is_mut,
+                lifetime: *lifetime,
+                inner: Box::new(field.element),
             }),
             _ => panic!("Type::data"),
         }
@@ -114,8 +107,8 @@ impl Type {
 
     /// Returns a `Type` from a `Tuple` or `TupleStruct`
     pub fn index(&self, index: usize) -> Self {
-        match &self.0 {
-            TypeNode::Tuple(types) => Self(types[index].clone()),
+        match self {
+            TypeNode::Tuple(types) => types[index].clone(),
             TypeNode::DataStructure(data) => {
                 if let Data::Struct(Struct::Tuple(TupleStruct { fields, .. })) = &data.data {
                     fields[index].element.clone()
@@ -128,21 +121,21 @@ impl Type {
     }
 
     pub fn new_trait_object(type_param_bounds: &[&str], param_map: &mut SynParamMap) -> Self {
-        Self(TypeNode::TraitObject(
+        TypeNode::TraitObject(
             type_param_bounds
                 .iter()
                 .map(|bound| TypeParamBound::get_type_param_bound(bound, param_map))
                 .collect(),
-        ))
+        )
     }
 
     pub fn new_type_param_from_str(type_param: &str, param_map: &mut SynParamMap) -> Self {
         if let Some(&param) = param_map.get(type_param) {
-            Self(TypeNode::TypeParam(
+            TypeNode::TypeParam(
                 param
                     .type_param()
                     .expect("Type::type_param_from_str: Not a type param"),
-            ))
+            )
         } else {
             panic!("Type::type_param_from_str: Not a type param")
         }
@@ -157,32 +150,32 @@ impl Type {
             }) => {
                 if let Some(ident) = path.get_ident() {
                     if let Some(&param) = param_map.get(&ident.to_string()) {
-                        return Self(TypeNode::TypeParam(
+                        return TypeNode::TypeParam(
                             param
                                 .type_param()
                                 .expect("syn_to_type: Not a type param ref"),
-                        ));
+                        );
                     }
                 }
-                Self(TypeNode::Path(Path::syn_to_path(path, param_map)))
+                TypeNode::Path(Path::syn_to_path(path, param_map))
             }
 
             syn::Type::Reference(reference) => {
-                let inner = Box::new(Self::syn_to_type(*reference.elem, param_map).0);
+                let inner = Box::new(Self::syn_to_type(*reference.elem, param_map));
                 let lifetime = reference
                     .lifetime
                     .map(|lifetime| param_map.get_lifetime(&lifetime.to_string()));
 
-                Self(TypeNode::Reference {
+                TypeNode::Reference {
                     is_mut: reference.mutability.is_some(),
                     lifetime,
                     inner,
-                })
+                }
             }
 
-            syn::Type::TraitObject(type_trait_object) => Self(TypeNode::TraitObject(
+            syn::Type::TraitObject(type_trait_object) => TypeNode::TraitObject(
                 generics::syn_to_type_param_bounds(type_trait_object.bounds, param_map).collect(),
-            )),
+            ),
 
             syn::Type::Tuple(type_tuple) => {
                 if type_tuple.elems.is_empty() {
@@ -192,21 +185,17 @@ impl Type {
                     // disambiguate the type.
                     Self::syn_to_type(type_tuple.elems.into_iter().next().unwrap(), param_map)
                 } else {
-                    Self(TypeNode::Tuple(
+                    TypeNode::Tuple(
                         type_tuple
                             .elems
                             .into_iter()
-                            .map(|elem| Self::syn_to_type(elem, param_map).0)
+                            .map(|elem| Self::syn_to_type(elem, param_map))
                             .collect(),
-                    ))
+                    )
                 }
             }
             _ => unimplemented!("Type::syn_to_type"),
         }
-    }
-
-    pub(crate) fn clone_with_fresh_generics(&self, param_map: &ParamMap) -> Self {
-        Self(self.0.clone_with_fresh_generics(param_map))
     }
 }
 

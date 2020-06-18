@@ -1,6 +1,6 @@
 use crate::{
     Function, GlobalBorrow, GlobalPush, Ident, InvokeRef, MacroInvokeRef, Parent, Path,
-    RuntimeFunction, Type, TypeNode, Value, ValueNode, ValueRef, INVOKES, MACROS, VALUES,
+    RuntimeFunction, TypeNode, Value, ValueNode, ValueRef, INVOKES, MACROS, VALUES,
 };
 use std::cell::RefCell;
 use std::ops::Range;
@@ -14,7 +14,7 @@ pub struct MakeImpl<'a> {
 #[derive(Debug, Clone)]
 pub(crate) struct WipImpl {
     pub(crate) trait_ty: Option<Rc<Parent>>,
-    pub(crate) ty: Type,
+    pub(crate) ty: TypeNode,
     pub(crate) functions: RefCell<Vec<WipFunction>>,
 }
 
@@ -26,7 +26,7 @@ pub struct MakeFunction<'a> {
 #[derive(Debug, Clone)]
 pub(crate) struct WipFunction {
     // self_ty is None for freestanding functions
-    pub(crate) self_ty: Option<Type>,
+    pub(crate) self_ty: Option<TypeNode>,
     pub(crate) f: Rc<Function>,
     pub(crate) values: WipRange<ValueRef>,
     pub(crate) invokes: WipRange<InvokeRef>,
@@ -109,13 +109,13 @@ impl<'a> MakeFunction<'a> {
 
         let node = match match wip.f.sig.receiver {
             SelfByValue if index == 0 => wip.self_ty.clone(),
-            SelfByReference { is_mut, lifetime } if index == 0 => wip.self_ty.clone().map(|ty| {
-                Type(TypeNode::Reference {
+            SelfByReference { is_mut, lifetime } if index == 0 => {
+                wip.self_ty.clone().map(|ty| TypeNode::Reference {
                     is_mut,
                     lifetime: lifetime.0,
-                    inner: Box::new(ty.0),
+                    inner: Box::new(ty),
                 })
-            }),
+            }
             NoSelf => None,
             SelfByValue | SelfByReference { .. } => {
                 index -= 1;
@@ -158,7 +158,7 @@ impl WipFunction {
 }
 impl WipImpl {
     pub(crate) fn has_generics(&self) -> bool {
-        if let TypeNode::DataStructure(data) = &self.ty.0 {
+        if let TypeNode::DataStructure(data) = &self.ty {
             !data.generics.params.is_empty()
                 || if let Some(parent) = &self.trait_ty {
                     !parent.generics.params.is_empty()

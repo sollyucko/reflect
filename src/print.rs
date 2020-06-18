@@ -1,5 +1,5 @@
 use crate::generics::*;
-use crate::{path, Accessor, Lifetime, SimplePath, Type, TypeNode, TypeParam};
+use crate::{path, Accessor, Lifetime, SimplePath, TypeNode, TypeParam};
 use proc_macro2::{Punct, Spacing, Span, TokenStream};
 use quote::{quote, ToTokens, TokenStreamExt};
 use ref_cast::RefCast;
@@ -16,12 +16,6 @@ impl ToTokens for Print<Accessor> {
             Name(ident) => ident.to_tokens(tokens),
             Index(i) => LitInt::new(&i.to_string(), Span::call_site()).to_tokens(tokens),
         }
-    }
-}
-
-impl ToTokens for Print<Type> {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        Print::ref_cast(&(self.0).0).to_tokens(tokens);
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::{GlobalCounter, Ident, Path, Type, TypeNode, LIFETIMES, STATIC_LIFETIME, TYPE_PARAMS};
+use crate::{GlobalCounter, Ident, Path, TypeNode, LIFETIMES, STATIC_LIFETIME, TYPE_PARAMS};
 use std::collections::BTreeMap;
 use std::default::Default;
 use syn::{parse_str, BoundLifetimes, PredicateLifetime, WhereClause, WherePredicate};
@@ -26,10 +26,10 @@ pub(crate) enum GenericParam {
 }
 
 #[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub(crate) struct TypeParam(pub usize);
+pub struct TypeParam(pub usize);
 
 #[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub(crate) struct Lifetime(pub usize);
+pub struct Lifetime(pub usize);
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub(crate) enum GenericConstraint {
@@ -41,18 +41,18 @@ pub(crate) enum GenericConstraint {
 pub(crate) struct PredicateType {
     /// A set of bound Lifetimes: `for<'a, 'b, 'c>`.
     pub(crate) lifetimes: Vec<Lifetime>,
-    pub(crate) bounded_ty: Type,
+    pub(crate) bounded_ty: TypeNode,
     pub(crate) bounds: Vec<TypeParamBound>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub(crate) enum TypeParamBound {
+pub enum TypeParamBound {
     Trait(TraitBound),
     Lifetime(Lifetime),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub(crate) struct TraitBound {
+pub struct TraitBound {
     /// A set of bound Lifetimes: `for<'a, 'b, 'c>`.
     pub(crate) lifetimes: Vec<Lifetime>,
     pub(crate) path: Path,
@@ -76,7 +76,7 @@ pub(crate) struct GenericArguments {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub(crate) enum GenericArgument {
-    Type(Type),
+    Type(TypeNode),
     Lifetime(Lifetime),
     Binding(Binding),
     Constraint(Constraint),
@@ -86,7 +86,7 @@ pub(crate) enum GenericArgument {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub(crate) struct Binding {
     pub(crate) ident: Ident,
-    pub(crate) ty: Type,
+    pub(crate) ty: TypeNode,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -378,7 +378,7 @@ where
             ..
         }) => GenericConstraint::Type(PredicateType {
             lifetimes: syn_to_bound_lifetimes(lifetimes, param_map),
-            bounded_ty: Type::syn_to_type(bounded_ty, param_map),
+            bounded_ty: TypeNode::syn_to_type(bounded_ty, param_map),
             bounds: syn_to_type_param_bounds(bounds, param_map).collect(),
         }),
         WherePredicate::Lifetime(PredicateLifetime {
@@ -414,11 +414,11 @@ where
                 if !bounds.is_empty() {
                     constraints.push(GenericConstraint::Type(PredicateType {
                         lifetimes: Vec::new(),
-                        bounded_ty: Type(TypeNode::TypeParam(
+                        bounded_ty: TypeNode::TypeParam(
                             param
                                 .type_param()
                                 .expect("syn_to_generic_params: Not a type param ref"),
-                        )),
+                        ),
                         bounds: syn_to_type_param_bounds(bounds, &mut param_map).collect(),
                     }));
                 }
@@ -507,7 +507,7 @@ impl GenericArgument {
         param_map: &mut SynParamMap,
     ) -> Self {
         match arg {
-            syn::GenericArgument::Type(ty) => Self::Type(Type::syn_to_type(ty, param_map)),
+            syn::GenericArgument::Type(ty) => Self::Type(TypeNode::syn_to_type(ty, param_map)),
 
             syn::GenericArgument::Lifetime(lifetime) => {
                 Self::Lifetime(param_map.get_lifetime(&lifetime.to_string()))
@@ -515,7 +515,7 @@ impl GenericArgument {
 
             syn::GenericArgument::Binding(binding) => Self::Binding(Binding {
                 ident: Ident::from(binding.ident),
-                ty: Type::syn_to_type(binding.ty, param_map),
+                ty: TypeNode::syn_to_type(binding.ty, param_map),
             }),
 
             syn::GenericArgument::Constraint(constraint) => Self::Constraint(Constraint {

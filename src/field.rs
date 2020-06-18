@@ -1,4 +1,4 @@
-use crate::{attr, GlobalPush, Ident, Type, Value, ValueNode, VALUES};
+use crate::{attr, GlobalPush, Ident, TypeNode, Value, ValueNode, VALUES};
 use std::fmt::{self, Debug, Display};
 use syn::Attribute;
 
@@ -48,7 +48,7 @@ impl Field<Value> {
     }
 }
 
-impl Field<Type> {
+impl Field<TypeNode> {
     pub fn get_name(&self) -> String {
         self.accessor.to_string()
     }

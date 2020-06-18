@@ -1,5 +1,6 @@
 use crate::{
-    GlobalPush, MacroInvoke, Path, RuntimeType, SynParamMap, Type, Value, ValueNode, MACROS, VALUES,
+    GlobalPush, MacroInvoke, Path, RuntimeType, SynParamMap, TypeNode, Value, ValueNode, MACROS,
+    VALUES,
 };
 
 #[derive(Debug, Clone)]
@@ -29,7 +30,7 @@ impl Module {
     }
 
     /// Get a path type by appending a path segment at the end of a module path
-    pub fn get_path_type(&self, segment: &str, param_map: &mut SynParamMap) -> Type {
+    pub fn get_path_type(&self, segment: &str, param_map: &mut SynParamMap) -> TypeNode {
         self.get_path(segment, param_map).SELF()
     }
 

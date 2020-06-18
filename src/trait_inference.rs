@@ -1,9 +1,8 @@
 use crate::{
     AngleBracketedGenericArguments, CompleteFunction, CompleteImpl, Function, GenericArgument,
     GenericArguments, GenericConstraint, GenericParam, GlobalBorrow, Lifetime, LifetimeDef, Parent,
-    ParentKind, Path, PathArguments, PredicateType, Push, Receiver, TraitBound, Type,
-    TypeEqualitySetRef, TypeNode, TypeParamBound, WipFunction, WipImpl, INVOKES, STATIC_LIFETIME,
-    VALUES,
+    ParentKind, Path, PathArguments, PredicateType, Push, Receiver, TraitBound, TypeEqualitySetRef,
+    TypeNode, TypeParamBound, WipFunction, WipImpl, INVOKES, STATIC_LIFETIME, VALUES,
 };
 // FxHasher is used because it is a faster hashing algorithm than the
 // default one, but most importantly because it has a hasher with a default
@@ -543,14 +542,14 @@ impl TypeEqualitySets {
             (TraitObject(bounds), supertype) => {
                 constraints.insert(GenericConstraint::Type(PredicateType {
                     lifetimes: Vec::new(),
-                    bounded_ty: Type(supertype),
+                    bounded_ty: supertype,
                     bounds,
                 }));
             }
             (subtype, TraitObject(bounds)) => {
                 constraints.insert(GenericConstraint::Type(PredicateType {
                     lifetimes: Vec::new(),
-                    bounded_ty: Type(subtype),
+                    bounded_ty: subtype,
                     bounds,
                 }));
             }
@@ -622,14 +621,14 @@ impl TypeEqualitySets {
             (TraitObject(bounds), supertype) => {
                 constraints.insert(GenericConstraint::Type(PredicateType {
                     lifetimes: Vec::new(),
-                    bounded_ty: Type(supertype),
+                    bounded_ty: supertype,
                     bounds,
                 }));
             }
             (subtype, TraitObject(bounds)) => {
                 constraints.insert(GenericConstraint::Type(PredicateType {
                     lifetimes: Vec::new(),
-                    bounded_ty: Type(subtype),
+                    bounded_ty: subtype,
                     bounds,
                 }));
             }
@@ -776,12 +775,7 @@ impl TypeEqualitySets {
                     .zip(args2.args.args.iter())
                     .for_each(|args| match args {
                         (GenericArgument::Type(ty1), GenericArgument::Type(ty2)) => self
-                            .insert_types_as_equal(
-                                ty1.0.clone(),
-                                ty2.0.clone(),
-                                constraints,
-                                subtypes,
-                            ),
+                            .insert_types_as_equal(ty1.clone(), ty2.clone(), constraints, subtypes),
                         (
                             GenericArgument::Lifetime(lifetime1),
                             GenericArgument::Lifetime(lifetime2),
@@ -876,7 +870,7 @@ impl WipImpl {
         let mut original_trait_args = Vec::new();
 
         // data structure generics
-        if let Type(TypeNode::DataStructure(data)) = &mut self.ty {
+        if let TypeNode::DataStructure(data) = &mut self.ty {
             data.generics.constraints.drain(..).for_each(|constraint| {
                 constraints.insert(constraint);
             });
@@ -950,12 +944,12 @@ impl WipFunction {
                         match reciever {
                             SelfByValue => match parent.parent_kind {
                                 ParentKind::Trait => {
-                                    if let TypeNode::TypeParam(_) = &first_type.0 {
+                                    if let TypeNode::TypeParam(_) = &first_type {
                                         add_self_trait_bound(parent, first_type, constraints)
                                     }
                                 }
                                 ParentKind::Impl => type_equality_sets.insert_as_subtype_or_equal(
-                                    first_type.0,
+                                    first_type,
                                     TypeNode::Path(parent.path.clone()),
                                     constraints,
                                     subtypes,
@@ -965,12 +959,12 @@ impl WipFunction {
                             SelfByReference { is_mut, lifetime } => match parent.parent_kind {
                                 ParentKind::Trait => {
                                     let first_type = first_type.dereference();
-                                    if let TypeNode::TypeParam(_) = &first_type.0 {
+                                    if let TypeNode::TypeParam(_) = &first_type {
                                         add_self_trait_bound(parent, first_type, constraints)
                                     }
                                 }
                                 ParentKind::Impl => type_equality_sets.insert_as_subtype_or_equal(
-                                    first_type.0,
+                                    first_type,
                                     TypeNode::Reference {
                                         is_mut,
                                         inner: Box::new(TypeNode::Path(parent.path.clone())),
@@ -989,8 +983,8 @@ impl WipFunction {
 
                 sig.inputs.iter().zip(args_iter).for_each(|(ty, val)| {
                     type_equality_sets.insert_as_subtype_or_equal(
-                        val.node().get_type().0,
-                        ty.0.clone(),
+                        val.node().get_type(),
+                        ty.clone(),
                         constraints,
                         subtypes,
                         &mut supertype_map,
@@ -1060,8 +1054,8 @@ impl WipFunction {
                 VALUES.with_borrow(|values| values[self.values.end.unwrap().0 - 1].get_type());
 
             type_equality_sets.insert_as_subtype_or_equal(
-                return_value_type.0,
-                self.f.sig.output.0.clone(),
+                return_value_type,
+                self.f.sig.output.clone(),
                 constraints,
                 subtypes,
                 supertype_map,
@@ -1097,13 +1091,10 @@ impl WipFunction {
         }
 
         for input in &mut f.sig.inputs {
-            input
-                .0
-                .make_most_concrete(concrete_maps_and_sets, transitive_closure);
+            input.make_most_concrete(concrete_maps_and_sets, transitive_closure);
         }
         f.sig
             .output
-            .0
             .make_most_concrete(concrete_maps_and_sets, transitive_closure);
 
         for constraint in &mut f.sig.generics.constraints {
@@ -1128,7 +1119,11 @@ impl WipFunction {
     }
 }
 
-fn add_self_trait_bound(parent: &Rc<Parent>, first_type: Type, constraints: &mut ConstraintSet) {
+fn add_self_trait_bound(
+    parent: &Rc<Parent>,
+    first_type: TypeNode,
+    constraints: &mut ConstraintSet,
+) {
     assert_eq!(parent.parent_kind, ParentKind::Trait);
 
     let mut path = parent.path.clone();
@@ -1152,7 +1147,7 @@ fn params_to_args(params: &[GenericParam]) -> PathArguments {
             args: params
                 .iter()
                 .map(|param| match param {
-                    GenericParam::Type(ty) => GenericArgument::Type(Type(TypeNode::TypeParam(*ty))),
+                    GenericParam::Type(ty) => GenericArgument::Type(TypeNode::TypeParam(*ty)),
                     GenericParam::Lifetime(lifetime) => GenericArgument::Lifetime(*lifetime),
                     GenericParam::Const(_) => unimplemented!(),
                 })
@@ -1228,7 +1223,7 @@ fn get_args(
                 GenericParam::Type(ty) => {
                     let mut node = TypeNode::TypeParam(ty);
                     node.make_most_concrete(concrete_maps_and_sets, transitive_closure);
-                    GenericArgument::Type(Type(node))
+                    GenericArgument::Type(node)
                 }
                 GenericParam::Lifetime(mut lifetime) => {
                     lifetime.make_most_concrete(transitive_closure);
@@ -1312,7 +1307,6 @@ impl PredicateType {
         relevant_generic_params: &BTreeSet<GenericParam>,
     ) -> bool {
         self.bounded_ty
-            .0
             .is_relevant_for_constraint(type_equality_sets, relevant_generic_params)
             && self.bounds.iter().all(|bound| {
                 bound.is_relevant_for_constraint(type_equality_sets, relevant_generic_params)
@@ -1325,7 +1319,6 @@ impl PredicateType {
         transitive_closure: &mut TransitiveClosure,
     ) {
         self.bounded_ty
-            .0
             .make_most_concrete(concrete_maps_and_sets, transitive_closure);
 
         self.bounds.iter_mut().for_each(|bound| {
@@ -1582,7 +1575,7 @@ impl Path {
 
             PathArguments::AngleBracketed(args) => args.args.args.iter().all(|arg| match arg {
                 GenericArgument::Type(ty) => {
-                    ty.0.is_relevant_for_constraint(type_equality_sets, relevant_generic_params)
+                    ty.is_relevant_for_constraint(type_equality_sets, relevant_generic_params)
                 }
 
                 GenericArgument::Lifetime(lifetime) => {
@@ -1610,7 +1603,7 @@ impl Path {
                     for arg in &args.args.args {
                         match arg {
                             GenericArgument::Type(ty) => {
-                                ty.0.inner_params(type_equality_sets, relevant_generic_params)
+                                ty.inner_params(type_equality_sets, relevant_generic_params)
                             }
                             GenericArgument::Lifetime(lifetime) => {
                                 relevant_generic_params.insert(GenericParam::Lifetime(*lifetime));
@@ -1638,7 +1631,7 @@ impl Path {
             PathArguments::AngleBracketed(args) => {
                 args.args.args.iter_mut().for_each(|arg| match arg {
                     GenericArgument::Type(ty) => {
-                        ty.0.make_most_concrete(concrete_maps_and_sets, transitive_closure)
+                        ty.make_most_concrete(concrete_maps_and_sets, transitive_closure)
                     }
 
                     GenericArgument::Lifetime(lifetime) => {
@@ -1717,13 +1710,11 @@ impl Path {
                             .zip(args2.iter())
                             .map(|arg_pair| match arg_pair {
                                 (GenericArgument::Type(ty1), GenericArgument::Type(ty2)) => {
-                                    GenericArgument::Type(Type(
-                                        TypeNode::make_most_concrete_from_pair(
-                                            ty1.clone().0,
-                                            ty2.clone().0,
-                                            concrete_maps_and_sets,
-                                            transitive_closure,
-                                        ),
+                                    GenericArgument::Type(TypeNode::make_most_concrete_from_pair(
+                                        ty1.clone(),
+                                        ty2.clone(),
+                                        concrete_maps_and_sets,
+                                        transitive_closure,
                                     ))
                                 }
                                 (

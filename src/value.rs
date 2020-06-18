@@ -1,6 +1,6 @@
 use crate::{
-    ty::DataStructure, Accessor, Data, GlobalBorrow, GlobalPush, Struct, TupleStruct, Type,
-    TypeNode, ValueNode, ValueRef, VALUES,
+    ty::DataStructure, Accessor, Data, GlobalBorrow, GlobalPush, Struct, TupleStruct, TypeNode,
+    ValueNode, ValueRef, VALUES,
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -91,7 +91,7 @@ impl Value {
                 index: values[index],
             },
             ValueNode::Binding {
-                ty: Type(TypeNode::Tuple(types)),
+                ty: TypeNode::Tuple(types),
                 ..
             } => {
                 if index >= types.len() {
@@ -100,7 +100,7 @@ impl Value {
                 let node = ValueNode::Destructure {
                     parent: self.index,
                     accessor: Accessor::Index(index),
-                    ty: Type(types[index].clone()),
+                    ty: types[index].clone(),
                 };
                 Self {
                     index: VALUES.index_push(node),
@@ -121,7 +121,7 @@ impl Value {
                 }
             }
             ValueNode::Binding {
-                ty: Type(TypeNode::DataStructure(data)),
+                ty: TypeNode::DataStructure(data),
                 ..
             } if is_tuple_struct(&*data) => {
                 if let Data::Struct(Struct::Tuple(TupleStruct { fields, .. })) = data.data {
@@ -142,7 +142,7 @@ impl Value {
                 let node = ValueNode::Destructure {
                     parent: self.index,
                     accessor: Accessor::Index(index),
-                    ty: Type(TypeNode::Infer),
+                    ty: TypeNode::Infer,
                 };
                 Self {
                     index: VALUES.index_push(node),

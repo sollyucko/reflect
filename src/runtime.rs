@@ -1,9 +1,9 @@
-use crate::{Function, Parent, Path, Type, TypeNode};
+use crate::{Function, Parent, Path, TypeNode};
 use std::rc::Rc;
 
 pub trait RuntimeType {
     #[allow(non_snake_case)]
-    fn SELF(self) -> Type;
+    fn SELF(self) -> TypeNode;
 }
 
 pub trait RuntimeFunction {
@@ -20,15 +20,15 @@ pub trait RuntimeTrait: RuntimeParent {}
 
 pub trait RuntimeImpl: RuntimeParent {}
 
-impl RuntimeType for Type {
-    fn SELF(self) -> Type {
+impl RuntimeType for TypeNode {
+    fn SELF(self) -> TypeNode {
         self
     }
 }
 
 impl RuntimeType for Path {
-    fn SELF(self) -> Type {
-        Type(TypeNode::Path(self))
+    fn SELF(self) -> TypeNode {
+        TypeNode::Path(self)
     }
 }
 
@@ -40,8 +40,8 @@ pub mod prelude {
     pub struct str;
 
     impl RuntimeType for str {
-        fn SELF(self) -> Type {
-            Type::new_primitive_str()
+        fn SELF(self) -> TypeNode {
+            TypeNode::new_primitive_str()
         }
     }
 }

@@ -1,4 +1,4 @@
-use crate::{GenericArgument, GenericArguments, Ident, ParamMap, SynParamMap, Type};
+use crate::{GenericArgument, GenericArguments, Ident, ParamMap, SynParamMap, TypeNode};
 use ref_cast::RefCast;
 use syn::parse::{Parse, ParseStream, Result};
 use syn::{parse_str, ReturnType, Token};
@@ -37,9 +37,9 @@ pub(crate) struct AngleBracketedGenericArguments {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub(crate) struct ParenthesizedGenericArguments {
     /// (A, B)
-    pub(crate) inputs: Vec<Type>,
+    pub(crate) inputs: Vec<TypeNode>,
     /// C
-    pub(crate) output: Option<Type>,
+    pub(crate) output: Option<TypeNode>,
 }
 
 impl Path {
@@ -126,11 +126,11 @@ impl Path {
                     inputs: parenthesized
                         .inputs
                         .into_iter()
-                        .map(|input| Type::syn_to_type(input, param_map))
+                        .map(|input| TypeNode::syn_to_type(input, param_map))
                         .collect(),
                     output: match parenthesized.output {
                         ReturnType::Default => None,
-                        ReturnType::Type(_, ty) => Some(Type::syn_to_type(*ty, param_map)),
+                        ReturnType::Type(_, ty) => Some(TypeNode::syn_to_type(*ty, param_map)),
                     },
                 }),
             },

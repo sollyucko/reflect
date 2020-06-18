@@ -1,7 +1,7 @@
 use crate::ident::Ident;
 use crate::{
     Function, GlobalBorrow, InvokeRef, MacroInvokeRef, Parent, Print, Receiver, SimplePath,
-    TraitInferenceResult, Type, TypeNode, ValueNode, ValueRef, INVOKES, MACROS, VALUES,
+    TraitInferenceResult, TypeNode, ValueNode, ValueRef, INVOKES, MACROS, VALUES,
 };
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, ToTokens};
@@ -20,14 +20,14 @@ pub(crate) struct Program {
 #[derive(Debug)]
 pub(crate) struct CompleteImpl {
     pub trait_ty: Option<Rc<Parent>>,
-    pub ty: Type,
+    pub ty: TypeNode,
     pub functions: Vec<CompleteFunction>,
     pub result: Option<TraitInferenceResult>,
 }
 
 #[derive(Debug)]
 pub(crate) struct CompleteFunction {
-    pub self_ty: Option<Type>,
+    pub self_ty: Option<TypeNode>,
     pub f: Rc<Function>,
     pub values: Range<ValueRef>,
     pub invokes: Range<InvokeRef>,
@@ -49,7 +49,7 @@ impl CompleteImpl {
     fn compile(&self) -> TokenStream {
         let functions = self.functions.iter().map(CompleteFunction::compile);
 
-        let name = if let TypeNode::DataStructure(data) = &self.ty.0 {
+        let name = if let TypeNode::DataStructure(data) = &self.ty {
             &data.name
         } else {
             panic!()
@@ -137,7 +137,7 @@ impl CompleteFunction {
         }
 
         let output = match &self.f.sig.output {
-            Type(TypeNode::Tuple(types)) if types.is_empty() => None,
+            TypeNode::Tuple(types) if types.is_empty() => None,
             other => {
                 let ty = Print::ref_cast(other);
                 Some(quote!(-> #ty))
@@ -329,7 +329,7 @@ impl CompleteFunction {
                 accessor,
                 ty,
             } => {
-                let mut node = &parent.node().get_type().0;
+                let mut node = &parent.node().get_type();
                 let parent = parent.binding();
                 let accessor = Print::ref_cast(accessor);
                 let mut references = TokenStream::new();

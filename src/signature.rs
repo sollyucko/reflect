@@ -1,6 +1,6 @@
 use crate::{
     GenericArgument, GenericParam, Generics, GlobalCounter, Lifetime, ParamMap, Path,
-    PathArguments, SynParamMap, Type,
+    PathArguments, SynParamMap,
     TypeNode::{self, *},
     TypeParamBound, LIFETIMES,
 };
@@ -10,8 +10,8 @@ use std::default::Default;
 pub struct Signature {
     pub(crate) generics: Generics,
     pub(crate) receiver: Receiver,
-    pub(crate) inputs: Vec<Type>,
-    pub(crate) output: Type,
+    pub(crate) inputs: Vec<TypeNode>,
+    pub(crate) output: TypeNode,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -52,30 +52,30 @@ impl Receiver {
     }
 }
 
-impl<'a> AddInput<'a, Type> for Signature {
-    fn add_input(&'a mut self, into_input: Type) {
+impl<'a> AddInput<'a, TypeNode> for Signature {
+    fn add_input(&'a mut self, into_input: TypeNode) {
         self.inputs.push(into_input)
     }
 }
 
 impl<'a, F> AddInput<'a, F> for Signature
 where
-    F: FnOnce(&'a mut SynParamMap) -> Type,
+    F: FnOnce(&'a mut SynParamMap) -> TypeNode,
 {
     fn add_input(&'a mut self, into_input: F) {
         self.inputs.push((into_input)(&mut self.generics.param_map))
     }
 }
 
-impl<'a> SetOutput<'a, Type> for Signature {
-    fn set_output(&'a mut self, into_output: Type) {
+impl<'a> SetOutput<'a, TypeNode> for Signature {
+    fn set_output(&'a mut self, into_output: TypeNode) {
         self.output = into_output;
     }
 }
 
 impl<'a, F> SetOutput<'a, F> for Signature
 where
-    F: FnOnce(&'a mut SynParamMap) -> Type,
+    F: FnOnce(&'a mut SynParamMap) -> TypeNode,
 {
     fn set_output(&'a mut self, into_output: F) {
         self.output = (into_output)(&mut self.generics.param_map);
@@ -88,7 +88,7 @@ impl Signature {
             generics: Generics::default(),
             receiver: Receiver::NoSelf,
             inputs: Vec::new(),
-            output: Type::new_unit(),
+            output: TypeNode::new_unit(),
         }
     }
 
@@ -153,29 +153,28 @@ impl Signature {
         match &mut self.receiver {
             NoSelf => {
                 for ty in &mut self.inputs {
-                    ty.0.insert_new_lifetimes(&mut generics.params);
+                    ty.insert_new_lifetimes(&mut generics.params);
                 }
                 if self.inputs.len() == 1 {
-                    match &mut self.inputs[0].0 {
+                    match &mut self.inputs[0] {
                         Reference {
                             lifetime: Some(lifetime),
                             inner,
                             ..
                         } if !inner.has_lifetimes() => self
                             .output
-                            .0
                             .insert_new_lifetimes2(*lifetime, &mut generics.params),
                         _ => {}
                     }
                 } else {
-                    self.output.0.insert_new_lifetimes(&mut generics.params);
+                    self.output.insert_new_lifetimes(&mut generics.params);
                 }
             }
             SelfByValue => {
                 for ty in &mut self.inputs {
-                    ty.0.insert_new_lifetimes(&mut generics.params);
+                    ty.insert_new_lifetimes(&mut generics.params);
                 }
-                self.output.0.insert_new_lifetimes(&mut generics.params);
+                self.output.insert_new_lifetimes(&mut generics.params);
             }
             SelfByReference {
                 lifetime: option_lifetime,
@@ -190,10 +189,9 @@ impl Signature {
                 };
                 option_lifetime.0 = Some(lifetime);
                 for ty in &mut self.inputs {
-                    ty.0.insert_new_lifetimes(&mut generics.params);
+                    ty.insert_new_lifetimes(&mut generics.params);
                 }
                 self.output
-                    .0
                     .insert_new_lifetimes2(lifetime, &mut generics.params);
             }
         }
@@ -285,7 +283,7 @@ impl Path {
                 PathArguments::AngleBracketed(args) => {
                     for arg in &mut args.args.args {
                         if let GenericArgument::Type(ty) = arg {
-                            ty.0.insert_new_lifetimes(params)
+                            ty.insert_new_lifetimes(params)
                         }
                     }
                 }
@@ -303,7 +301,7 @@ impl Path {
                 PathArguments::AngleBracketed(args) => {
                     for arg in &mut args.args.args {
                         if let GenericArgument::Type(ty) = arg {
-                            ty.0.insert_new_lifetimes2(lifetime, params)
+                            ty.insert_new_lifetimes2(lifetime, params)
                         }
                     }
                 }
@@ -318,7 +316,7 @@ impl Path {
         self.path.iter().any(|segment| match &segment.args {
             PathArguments::None => false,
             PathArguments::AngleBracketed(args) => args.args.args.iter().any(|arg| match arg {
-                GenericArgument::Type(ty) => ty.0.has_lifetimes(),
+                GenericArgument::Type(ty) => ty.has_lifetimes(),
                 GenericArgument::Lifetime(_) => true,
                 _ => unimplemented!(),
             }),

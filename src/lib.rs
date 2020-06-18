@@ -364,7 +364,7 @@ pub use crate::module::Module;
 pub use crate::parent::{Parent, ParentBuilder, ParentKind};
 pub use crate::path::Path;
 pub use crate::signature::Signature;
-pub use crate::ty::Type;
+pub use crate::ty::TypeNode;
 pub use crate::value::Value;
 pub use crate::wip::{MakeFunction, MakeImpl};
 
@@ -387,5 +387,5 @@ use crate::print::Print;
 use crate::runtime::{RuntimeFunction, RuntimeTrait, RuntimeType};
 use crate::signature::Receiver;
 use crate::trait_inference::{TraitInferenceResult, TypeEqualitySet};
-use crate::ty::{DataStructure, TypeNode};
+use crate::ty::DataStructure;
 use crate::wip::{Invoke, MacroInvoke, WipFunction, WipImpl};
