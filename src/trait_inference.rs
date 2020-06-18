@@ -124,7 +124,7 @@ impl SupertypeMap {
     fn new() -> Self {
         let mut map = BTreeMap::new();
         map.insert(STATIC_LIFETIME, vec![STATIC_LIFETIME]);
-        SupertypeMap { map }
+        Self { map }
     }
 
     fn get(&self, lifetime: &Lifetime) -> Option<&Vec<Lifetime>> {
@@ -138,7 +138,7 @@ impl SupertypeMap {
 
 impl BoolMatrix {
     fn new(size: usize) -> Self {
-        BoolMatrix {
+        Self {
             size,
             matrix: vec![false; size * size],
         }
@@ -160,7 +160,7 @@ impl IndexMut<(usize, usize)> for BoolMatrix {
 
 impl LifetimeSubtypeMap {
     fn new() -> Self {
-        LifetimeSubtypeMap {
+        Self {
             subtypes: BTreeSet::new(),
         }
     }
@@ -284,7 +284,7 @@ impl TransitiveClosure {
             *lifetime = most_concrete;
             return;
         }
-        if let Some(&lifetime_index) = self.lifetime_index_mapping.get(&lifetime) {
+        if let Some(&lifetime_index) = self.lifetime_index_mapping.get(lifetime) {
             // Find the first lifetime self is equal to
             let equal_lifetimes: Vec<_> = (0..self.transitive_closure.size)
                 .filter_map(|i| {
@@ -311,7 +311,7 @@ impl TransitiveClosure {
 
 impl ConstraintSet {
     fn new() -> Self {
-        ConstraintSet {
+        Self {
             set: HashSet::default(),
         }
     }
@@ -352,7 +352,7 @@ impl ConstraintSet {
         concrete_maps_and_sets: &mut ConcreteMapAndSets,
         transitive_closure: &mut TransitiveClosure,
     ) -> Self {
-        ConstraintSet {
+        Self {
             set: self
                 .set
                 .into_iter()
@@ -379,7 +379,7 @@ where
     T: Eq + Hash,
 {
     fn new() -> Self {
-        EqualitySet {
+        Self {
             set: HashSet::default(),
         }
     }
@@ -1012,8 +1012,7 @@ impl WipFunction {
     fn constraint_iterator(f: &Function) -> impl Iterator<Item = &GenericConstraint> {
         f.parent
             .iter()
-            .map(|parent| parent.generics.constraints.iter())
-            .flatten()
+            .flat_map(|parent| parent.generics.constraints.iter())
             .chain(f.sig.generics.constraints.iter())
     }
 
@@ -1023,7 +1022,7 @@ impl WipFunction {
         subtypes: &mut LifetimeSubtypeMap,
         supertype_map: &SupertypeMap,
     ) {
-        Self::constraint_iterator(&function).for_each(|constraint| match constraint {
+        Self::constraint_iterator(function).for_each(|constraint| match constraint {
             GenericConstraint::Lifetime(lifetime_def) => {
                 lifetime_def
                     .bounds
@@ -1272,7 +1271,7 @@ impl GenericConstraint {
         self.make_most_concrete(concrete_maps_and_sets, transitive_closure);
         self.is_relevant(
             &concrete_maps_and_sets.type_equality_sets,
-            &relevant_generic_params,
+            relevant_generic_params,
         )
     }
 
@@ -1282,11 +1281,11 @@ impl GenericConstraint {
         relevant_generic_params: &BTreeSet<GenericParam>,
     ) -> bool {
         match self {
-            GenericConstraint::Type(pred_ty) => {
+            Self::Type(pred_ty) => {
                 pred_ty.is_relevant_for_constraint(type_equality_sets, relevant_generic_params)
             }
 
-            GenericConstraint::Lifetime(lifetime) => {
+            Self::Lifetime(lifetime) => {
                 lifetime.is_relevant_for_constraint(relevant_generic_params)
             }
         }
@@ -1298,12 +1297,10 @@ impl GenericConstraint {
         transitive_closure: &mut TransitiveClosure,
     ) {
         match self {
-            GenericConstraint::Type(pred_ty) => {
+            Self::Type(pred_ty) => {
                 pred_ty.make_most_concrete(concrete_maps_and_sets, transitive_closure)
             }
-            GenericConstraint::Lifetime(lifetime) => {
-                lifetime.make_most_concrete(transitive_closure)
-            }
+            Self::Lifetime(lifetime) => lifetime.make_most_concrete(transitive_closure),
         }
     }
 }
@@ -1316,9 +1313,9 @@ impl PredicateType {
     ) -> bool {
         self.bounded_ty
             .0
-            .is_relevant_for_constraint(&type_equality_sets, &relevant_generic_params)
+            .is_relevant_for_constraint(type_equality_sets, relevant_generic_params)
             && self.bounds.iter().all(|bound| {
-                bound.is_relevant_for_constraint(&type_equality_sets, &relevant_generic_params)
+                bound.is_relevant_for_constraint(type_equality_sets, relevant_generic_params)
             })
     }
 
@@ -1376,8 +1373,8 @@ impl TypeNode {
     /// considered to be equal. This is primarily decided based on the inner
     /// types of the nodes.
     fn make_most_concrete_from_pair(
-        ty1: TypeNode,
-        ty2: TypeNode,
+        ty1: Self,
+        ty2: Self,
         concrete_maps_and_sets: &mut ConcreteMapAndSets,
         transitive_closure: &mut TransitiveClosure,
     ) -> Self {
@@ -1403,7 +1400,7 @@ impl TypeNode {
                     .into_iter()
                     .zip(types2.into_iter())
                     .map(|(ty1, ty2)| {
-                        TypeNode::make_most_concrete_from_pair(
+                        Self::make_most_concrete_from_pair(
                             ty1,
                             ty2,
                             concrete_maps_and_sets,
@@ -1426,7 +1423,7 @@ impl TypeNode {
             ) => Reference {
                 is_mut: is_mut1 && is_mut2,
 
-                inner: Box::new(TypeNode::make_most_concrete_from_pair(
+                inner: Box::new(Self::make_most_concrete_from_pair(
                     *inner1,
                     *inner2,
                     concrete_maps_and_sets,
@@ -1547,11 +1544,11 @@ impl TypeParamBound {
         relevant_generic_params: &BTreeSet<GenericParam>,
     ) -> bool {
         match self {
-            TypeParamBound::Trait(bound) => bound
+            Self::Trait(bound) => bound
                 .path
                 .is_relevant_for_constraint(type_equality_sets, relevant_generic_params),
 
-            TypeParamBound::Lifetime(lifetime) => {
+            Self::Lifetime(lifetime) => {
                 lifetime.is_relevant_for_constraint(relevant_generic_params)
             }
         }
@@ -1563,13 +1560,13 @@ impl TypeParamBound {
         transitive_closure: &mut TransitiveClosure,
     ) {
         match self {
-            TypeParamBound::Trait(bound) => {
+            Self::Trait(bound) => {
                 bound
                     .path
                     .make_most_concrete_inner(concrete_maps_and_sets, transitive_closure);
             }
 
-            TypeParamBound::Lifetime(lifetime) => lifetime.make_most_concrete(transitive_closure),
+            Self::Lifetime(lifetime) => lifetime.make_most_concrete(transitive_closure),
         }
     }
 }
@@ -1681,8 +1678,8 @@ impl Path {
     /// The code generation may produce invalid code in this case, but I
     /// assume this will be rare, and not worth worrying about.
     fn make_most_concrete_from_pair(
-        mut path1: Path,
-        mut path2: Path,
+        mut path1: Self,
+        mut path2: Self,
         concrete_maps_and_sets: &mut ConcreteMapAndSets,
         transitive_closure: &mut TransitiveClosure,
     ) -> TypeNode {

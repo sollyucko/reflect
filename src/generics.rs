@@ -115,7 +115,7 @@ impl SynParamMap {
         let static_lifetime = "'static".to_string();
         let mut param_map = BTreeMap::new();
         param_map.insert(static_lifetime, GenericParam::Lifetime(STATIC_LIFETIME));
-        SynParamMap { map: param_map }
+        Self { map: param_map }
     }
 
     pub(crate) fn insert(&mut self, key: String, value: GenericParam) -> Option<GenericParam> {
@@ -126,12 +126,12 @@ impl SynParamMap {
         self.map.get(key)
     }
 
-    pub fn append(&mut self, other: &mut SynParamMap) {
+    pub fn append(&mut self, other: &mut Self) {
         self.map.append(&mut other.map)
     }
 
     pub(crate) fn clone_with_fresh_generics(&self, param_map: &ParamMap) -> Self {
-        let mut syn_param_map = SynParamMap::new();
+        let mut syn_param_map = Self::new();
         for key in self.map.keys() {
             let value = self.get(key).unwrap();
 
@@ -156,7 +156,7 @@ impl ParamMap {
             GenericParam::Lifetime(STATIC_LIFETIME),
             GenericParam::Lifetime(STATIC_LIFETIME),
         );
-        ParamMap { map }
+        Self { map }
     }
 
     pub(crate) fn insert(
@@ -186,11 +186,11 @@ impl TypeParamBound {
 
     pub(crate) fn clone_with_fresh_generics(&self, param_map: &ParamMap) -> Self {
         match self {
-            TypeParamBound::Lifetime(lifetime) => {
-                TypeParamBound::Lifetime(lifetime.clone_with_fresh_generics(param_map))
+            Self::Lifetime(lifetime) => {
+                Self::Lifetime(lifetime.clone_with_fresh_generics(param_map))
             }
 
-            TypeParamBound::Trait(bound) => TypeParamBound::Trait(TraitBound {
+            Self::Trait(bound) => Self::Trait(TraitBound {
                 lifetimes: bound
                     .lifetimes
                     .iter()
@@ -292,7 +292,7 @@ impl Generics {
                 &mut param_map,
             ));
         };
-        Generics {
+        Self {
             params,
             constraints,
             param_map,
@@ -302,7 +302,7 @@ impl Generics {
     pub(crate) fn clone_with_fresh_generics(&self) -> (Self, ParamMap) {
         let mut param_map = ParamMap::new();
         (
-            Generics {
+            Self {
                 params: self
                     .params
                     .iter()
@@ -326,7 +326,7 @@ impl Generics {
 
 impl Default for Generics {
     fn default() -> Self {
-        Generics {
+        Self {
             params: Vec::new(),
             constraints: Vec::new(),
             param_map: SynParamMap::new(),
@@ -491,7 +491,7 @@ pub(crate) fn syn_to_type_param_bound(
 
 impl GenericArguments {
     pub(crate) fn clone_with_fresh_generics(&self, param_map: &ParamMap) -> Self {
-        GenericArguments {
+        Self {
             args: self
                 .args
                 .iter()
@@ -507,25 +507,21 @@ impl GenericArgument {
         param_map: &mut SynParamMap,
     ) -> Self {
         match arg {
-            syn::GenericArgument::Type(ty) => {
-                GenericArgument::Type(Type::syn_to_type(ty, param_map))
-            }
+            syn::GenericArgument::Type(ty) => Self::Type(Type::syn_to_type(ty, param_map)),
 
             syn::GenericArgument::Lifetime(lifetime) => {
-                GenericArgument::Lifetime(param_map.get_lifetime(&lifetime.to_string()))
+                Self::Lifetime(param_map.get_lifetime(&lifetime.to_string()))
             }
 
-            syn::GenericArgument::Binding(binding) => GenericArgument::Binding(Binding {
+            syn::GenericArgument::Binding(binding) => Self::Binding(Binding {
                 ident: Ident::from(binding.ident),
                 ty: Type::syn_to_type(binding.ty, param_map),
             }),
 
-            syn::GenericArgument::Constraint(constraint) => {
-                GenericArgument::Constraint(Constraint {
-                    ident: Ident::from(constraint.ident),
-                    bounds: syn_to_type_param_bounds(constraint.bounds, param_map).collect(),
-                })
-            }
+            syn::GenericArgument::Constraint(constraint) => Self::Constraint(Constraint {
+                ident: Ident::from(constraint.ident),
+                bounds: syn_to_type_param_bounds(constraint.bounds, param_map).collect(),
+            }),
 
             syn::GenericArgument::Const(_expr) => {
                 unimplemented!("GenericArguments::syn_to_generic_arguments: Const")

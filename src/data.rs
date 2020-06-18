@@ -13,8 +13,8 @@ pub enum Data<T> {
 impl<T> Data<T> {
     pub fn attrs(&self) -> &[Attribute] {
         match self {
-            Data::Struct(s) => &s.attrs(),
-            Data::Enum(e) => &e.attrs,
+            Self::Struct(s) => s.attrs(),
+            Self::Enum(e) => &e.attrs,
         }
     }
 }
@@ -29,9 +29,9 @@ pub enum Struct<T> {
 impl<T> Struct<T> {
     pub fn attrs(&self) -> &[Attribute] {
         match self {
-            Struct::Unit(us) => &us.attrs,
-            Struct::Tuple(ts) => &ts.attrs,
-            Struct::Struct(ss) => &ss.attrs,
+            Self::Unit(us) => &us.attrs,
+            Self::Tuple(ts) => &ts.attrs,
+            Self::Struct(ss) => &ss.attrs,
         }
     }
 }
@@ -85,9 +85,9 @@ impl<T> Struct<T> {
         T: Clone,
     {
         let fields = match self {
-            Struct::Unit(s) => Vec::new(),
-            Struct::Tuple(s) => s.fields.clone(),
-            Struct::Struct(s) => s.fields.clone(),
+            Self::Unit(s) => Vec::new(),
+            Self::Tuple(s) => s.fields.clone(),
+            Self::Struct(s) => s.fields.clone(),
         };
         Fields {
             fields: fields.into_iter(),
@@ -168,9 +168,9 @@ pub enum Variant<T> {
 impl<T> Variant<T> {
     pub fn attrs(&self) -> &[Attribute] {
         match self {
-            Variant::Unit(uv) => &uv.attrs,
-            Variant::Tuple(tv) => &tv.attrs,
-            Variant::Struct(sv) => &sv.attrs,
+            Self::Unit(uv) => &uv.attrs,
+            Self::Tuple(tv) => &tv.attrs,
+            Self::Struct(sv) => &sv.attrs,
         }
     }
 }

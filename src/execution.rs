@@ -39,7 +39,7 @@ impl<'a> Execution<'a> {
 
 impl Tracker {
     pub(crate) fn new() -> Self {
-        Tracker {
+        Self {
             crates: RefCell::new(Vec::new()),
             impls: RefCell::new(Vec::new()),
         }

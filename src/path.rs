@@ -44,14 +44,14 @@ pub(crate) struct ParenthesizedGenericArguments {
 
 impl Path {
     pub(crate) fn root() -> Self {
-        Path {
+        Self {
             global: true,
             path: Vec::new(),
         }
     }
 
     pub(crate) fn empty() -> Self {
-        Path {
+        Self {
             global: false,
             path: Vec::new(),
         }
@@ -71,7 +71,7 @@ impl Path {
 
     pub(crate) fn get_path(&self, segment: &str, param_map: &mut SynParamMap) -> Self {
         let mut path = self.clone();
-        path.path.push(Path::syn_to_path_segment(
+        path.path.push(Self::syn_to_path_segment(
             parse_str(segment).expect("Path::get_path: Not a PathSegment"),
             param_map,
         ));
@@ -92,7 +92,7 @@ impl Path {
             .into_iter()
             .map(|segment| Self::syn_to_path_segment(segment, param_map))
             .collect();
-        Path { global, path }
+        Self { global, path }
     }
 
     pub(crate) fn syn_to_path_segment(
@@ -137,8 +137,8 @@ impl Path {
         }
     }
 
-    pub(crate) fn ident_to_path(ident: Ident) -> Path {
-        Path {
+    pub(crate) fn ident_to_path(ident: Ident) -> Self {
+        Self {
             global: false,
             path: vec![PathSegment {
                 ident,
@@ -148,7 +148,7 @@ impl Path {
     }
 
     pub(crate) fn clone_with_fresh_generics(&self, param_map: &ParamMap) -> Self {
-        Path {
+        Self {
             global: self.global,
             path: self
                 .path
@@ -180,7 +180,7 @@ impl Path {
 
 impl AngleBracketedGenericArguments {
     pub(crate) fn clone_with_fresh_generics(&self, param_map: &ParamMap) -> Self {
-        AngleBracketedGenericArguments {
+        Self {
             args: self.args.clone_with_fresh_generics(param_map),
         }
     }
@@ -188,7 +188,7 @@ impl AngleBracketedGenericArguments {
 
 impl ParenthesizedGenericArguments {
     pub(crate) fn clone_with_fresh_generics(&self, param_map: &ParamMap) -> Self {
-        ParenthesizedGenericArguments {
+        Self {
             inputs: self
                 .inputs
                 .iter()
@@ -217,7 +217,7 @@ impl Parse for SimplePath {
                 args: PathArguments::None,
             });
         }
-        Ok(SimplePath {
+        Ok(Self {
             path: Path { global, path },
         })
     }

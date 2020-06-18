@@ -9,7 +9,7 @@ pub struct Module {
 
 impl Module {
     pub fn root() -> Self {
-        Module {
+        Self {
             path: Path {
                 path: Vec::new(),
                 global: true,
@@ -17,8 +17,8 @@ impl Module {
         }
     }
 
-    pub fn get_module(&self, name: &str) -> Module {
-        Module {
+    pub fn get_module(&self, name: &str) -> Self {
+        Self {
             path: self.path.get_simple_path(name),
         }
     }

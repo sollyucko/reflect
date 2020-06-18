@@ -11,7 +11,7 @@ pub struct Value {
 impl Value {
     pub fn tuple(values: &[Self]) -> Self {
         let node = ValueNode::Tuple(values.iter().map(|v| v.index).collect());
-        Value {
+        Self {
             index: VALUES.index_push(node),
         }
     }
@@ -21,7 +21,7 @@ impl Value {
             is_mut: false,
             value: self.index,
         };
-        Value {
+        Self {
             index: VALUES.index_push(node),
         }
     }
@@ -31,17 +31,17 @@ impl Value {
             is_mut: true,
             value: self.index,
         };
-        Value {
+        Self {
             index: VALUES.index_push(node),
         }
     }
 
     pub fn dereference(&self) -> Self {
         match self.node() {
-            ValueNode::Reference { value, .. } => Value { index: value },
+            ValueNode::Reference { value, .. } => Self { index: value },
             other => {
                 let node = ValueNode::Dereference(self.index);
-                Value {
+                Self {
                     index: VALUES.index_push(node),
                 }
             }
@@ -50,7 +50,7 @@ impl Value {
 
     pub fn get_type_name(&self) -> Self {
         let node = self.node().get_type_name();
-        Value {
+        Self {
             index: VALUES.index_push(node),
         }
     }
@@ -58,14 +58,14 @@ impl Value {
     pub fn data(&self) -> Data<Self> {
         use crate::ValueNode::*;
         match self.node() {
-            DataStructure { data, .. } => data.map(|value_ref| Value {
+            DataStructure { data, .. } => data.map(|value_ref| Self {
                 index: value_ref.element,
             }),
             Reference { is_mut, value } if !is_mut => {
-                Value { index: value }.data().map(|v| v.element.reference())
+                Self { index: value }.data().map(|v| v.element.reference())
             }
 
-            Reference { is_mut, value } if is_mut => Value { index: value }
+            Reference { is_mut, value } if is_mut => Self { index: value }
                 .data()
                 .map(|v| v.element.reference_mut()),
 
@@ -76,7 +76,7 @@ impl Value {
                     accessor: field.accessor.clone(),
                     ty: field.element,
                 };
-                Value {
+                Self {
                     index: VALUES.index_push(node),
                 }
             }),
@@ -87,7 +87,7 @@ impl Value {
     /// Returns a `Value` from a `Tuple` or `TupleStruct`
     pub fn get_index(&self, index: usize) -> Self {
         match self.index.node() {
-            ValueNode::Tuple(values) => Value {
+            ValueNode::Tuple(values) => Self {
                 index: values[index],
             },
             ValueNode::Binding {
@@ -102,7 +102,7 @@ impl Value {
                     accessor: Accessor::Index(index),
                     ty: Type(types[index].clone()),
                 };
-                Value {
+                Self {
                     index: VALUES.index_push(node),
                 }
             }
@@ -116,7 +116,7 @@ impl Value {
                     accessor: field.accessor.clone(),
                     ty: field.element.get_type(),
                 };
-                Value {
+                Self {
                     index: VALUES.index_push(node),
                 }
             }
@@ -131,7 +131,7 @@ impl Value {
                         accessor: field.accessor.clone(),
                         ty: field.element.clone(),
                     };
-                    Value {
+                    Self {
                         index: VALUES.index_push(node),
                     }
                 } else {
@@ -144,7 +144,7 @@ impl Value {
                     accessor: Accessor::Index(index),
                     ty: Type(TypeNode::Infer),
                 };
-                Value {
+                Self {
                     index: VALUES.index_push(node),
                 }
             }

@@ -84,7 +84,7 @@ where
 
 impl Signature {
     pub fn new() -> Self {
-        Signature {
+        Self {
             generics: Generics::default(),
             receiver: Receiver::NoSelf,
             inputs: Vec::new(),
@@ -265,7 +265,7 @@ impl TypeNode {
     pub(crate) fn has_lifetimes(&self) -> bool {
         match self {
             Reference { .. } => true,
-            Tuple(types) => types.iter().any(TypeNode::has_lifetimes),
+            Tuple(types) => types.iter().any(Self::has_lifetimes),
             Dereference(node) => node.has_lifetimes(),
             TraitObject(bounds) => bounds.iter().any(|bound| match bound {
                 TypeParamBound::Trait(bound) => bound.path.has_lifetimes(),

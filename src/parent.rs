@@ -35,7 +35,7 @@ where
 
 impl ParentBuilder {
     pub fn new(parent_kind: ParentKind) -> Self {
-        ParentBuilder {
+        Self {
             path: None,
             generics: Default::default(),
             parent_kind,
@@ -82,7 +82,7 @@ impl Parent {
     pub(crate) fn clone_with_fresh_generics(&self) -> (Self, ParamMap) {
         let (generics, param_map) = self.generics.clone_with_fresh_generics();
         (
-            Parent {
+            Self {
                 path: self.path.clone_with_fresh_generics(&param_map),
                 generics,
                 parent_kind: self.parent_kind,

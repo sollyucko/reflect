@@ -56,7 +56,6 @@ impl TypedIndex for MacroInvoke {
 }
 
 #[derive(Debug, Clone, Copy, Ord, PartialOrd, Eq, PartialEq)]
-
 pub(crate) struct TypeEqualitySetRef(pub usize);
 
 impl TypedIndex for TypeEqualitySet {

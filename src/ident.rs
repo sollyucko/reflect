@@ -7,7 +7,7 @@ pub struct Ident(String);
 
 impl Ident {
     pub fn new<T: Display>(ident: T) -> Self {
-        Ident(ident.to_string())
+        Self(ident.to_string())
     }
 }
 
@@ -20,7 +20,7 @@ impl Display for Ident {
 
 impl From<proc_macro2::Ident> for Ident {
     fn from(item: proc_macro2::Ident) -> Self {
-        Ident(item.to_string())
+        Self(item.to_string())
     }
 }
 

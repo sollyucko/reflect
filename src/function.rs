@@ -9,7 +9,7 @@ pub struct Function {
 }
 
 impl Function {
-    pub fn invoke(self: Rc<Function>, args: &[Value]) -> Value {
+    pub fn invoke(self: Rc<Self>, args: &[Value]) -> Value {
         let function = self.clone_with_fresh_generics();
         let invoke = INVOKES.index_push(Invoke {
             function,
@@ -23,7 +23,7 @@ impl Function {
 
     pub fn get_function(name: &str, mut sig: Signature) -> Function {
         sig.insert_elided_lifetimes();
-        Function {
+        Self {
             parent: None,
             name: name.to_owned(),
             sig,
@@ -65,7 +65,7 @@ impl Function {
             let old_parent = self.parent.as_ref().unwrap();
             let old_sig = &self.sig;
 
-            Rc::new(Function {
+            Rc::new(Self {
                 parent: Some(Rc::new(parent)),
                 name: self.name.clone(),
                 sig: Signature {
@@ -79,11 +79,13 @@ impl Function {
                     output: old_sig.output.clone_with_fresh_generics(&param_map),
                 },
             })
-        } else if !self.sig.generics.params.is_empty() {
+        } else if self.sig.generics.params.is_empty() {
+            self.clone()
+        } else {
             let (sig_generics, param_map) = self.sig.generics.clone_with_fresh_generics();
             let old_sig = &self.sig;
 
-            Rc::new(Function {
+            Rc::new(Self {
                 parent: self.parent.clone(),
                 name: self.name.clone(),
                 sig: Signature {
@@ -97,8 +99,6 @@ impl Function {
                     output: old_sig.output.clone_with_fresh_generics(&param_map),
                 },
             })
-        } else {
-            self.clone()
         }
     }
 }

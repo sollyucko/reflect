@@ -112,7 +112,9 @@ impl CompleteFunction {
         let name = Ident::new(&self.f.name);
 
         let generics = &self.f.sig.generics;
-        let (params, where_clause) = if !generics.params.is_empty() {
+        let (params, where_clause) = if generics.params.is_empty() {
+            (None, None)
+        } else {
             let params = generics.params.iter().map(Print::ref_cast);
             let params = Some(quote!(<#(#params),*>));
             let where_clause = if generics.constraints.is_empty() {
@@ -122,8 +124,6 @@ impl CompleteFunction {
                 Some(quote!(where #(#constraints,)*))
             };
             (params, where_clause)
-        } else {
-            (None, None)
         };
 
         let mut inputs = Vec::new();
@@ -401,8 +401,8 @@ impl ValueRef {
 impl ValueNode {
     fn inlineable(&self) -> bool {
         match self {
-            ValueNode::Str(_) => true,
-            ValueNode::Tuple(values) => values.is_empty(),
+            Self::Str(_) => true,
+            Self::Tuple(values) => values.is_empty(),
             _ => false,
         }
     }

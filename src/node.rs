@@ -33,22 +33,22 @@ pub(crate) enum ValueNode {
 impl ValueNode {
     pub fn get_type(&self) -> Type {
         match self {
-            ValueNode::Tuple(types) => Type(TypeNode::Tuple(
+            Self::Tuple(types) => Type(TypeNode::Tuple(
                 types.iter().map(|type_ref| type_ref.get_type().0).collect(),
             )),
-            ValueNode::Str(_) => Type(TypeNode::PrimitiveStr),
-            ValueNode::Reference { is_mut, value } => Type(TypeNode::Reference {
+            Self::Str(_) => Type(TypeNode::PrimitiveStr),
+            Self::Reference { is_mut, value } => Type(TypeNode::Reference {
                 is_mut: *is_mut,
                 lifetime: None,
                 inner: Box::new(value.get_type().0),
             }),
-            ValueNode::Binding { ty, .. } => ty.clone(),
-            ValueNode::Destructure {
+            Self::Binding { ty, .. } => ty.clone(),
+            Self::Destructure {
                 parent,
                 accessor,
                 ty,
             } => ty.clone(),
-            ValueNode::Invoke(invoke_ref) => {
+            Self::Invoke(invoke_ref) => {
                 INVOKES.with_borrow(|invokes| invokes[invoke_ref.0].function.sig.output.clone())
             }
 
@@ -60,12 +60,12 @@ impl ValueNode {
     // resolving generic parameters during the type and trait inference stage.
     pub fn get_type_name(&self) -> Self {
         match self {
-            ValueNode::Tuple(types) => {
+            Self::Tuple(types) => {
                 let types: String =
                     types
                         .iter()
                         .fold(String::from(""), |mut acc, v| match &v.get_type_name() {
-                            ValueNode::Str(name) => {
+                            Self::Str(name) => {
                                 acc.push_str(name);
                                 acc.push_str(", ");
                                 acc
@@ -73,18 +73,18 @@ impl ValueNode {
                             _ => unreachable!(),
                         });
                 let types = format!("({})", types.trim_end_matches(", "));
-                ValueNode::Str(types)
+                Self::Str(types)
             }
-            ValueNode::Str(_) => ValueNode::Str(String::from("str")),
-            ValueNode::DataStructure { name, .. } => ValueNode::Str(name.to_owned()),
-            ValueNode::Reference { value, .. } => value.get_type_name(),
-            ValueNode::Binding { ty, .. } => ValueNode::Str(ty.0.get_name()),
-            ValueNode::Destructure {
+            Self::Str(_) => Self::Str(String::from("str")),
+            Self::DataStructure { name, .. } => Self::Str(name.to_owned()),
+            Self::Reference { value, .. } => value.get_type_name(),
+            Self::Binding { ty, .. } => Self::Str(ty.0.get_name()),
+            Self::Destructure {
                 parent,
                 accessor,
                 ty,
-            } => ValueNode::Str(ty.0.get_name()),
-            ValueNode::Invoke(invoke_ref) => ValueNode::Str(
+            } => Self::Str(ty.0.get_name()),
+            Self::Invoke(invoke_ref) => Self::Str(
                 INVOKES
                     .with_borrow(|invokes| invokes[invoke_ref.0].function.sig.output.0.get_name()),
             ),
