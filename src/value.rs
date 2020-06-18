@@ -64,11 +64,10 @@ impl Value {
             Reference { is_mut, value } if !is_mut => {
                 Self { index: value }.data().map(|v| v.element.reference())
             }
-
-            Reference { is_mut, value } if is_mut => Self { index: value }
-                .data()
-                .map(|v| v.element.reference_mut()),
-
+            #[rustfmt::skip]
+            Reference { is_mut, value } if is_mut => {
+                Self { index: value }.data().map(|v| v.element.reference_mut())
+            },
             // FIXME generate match and propagate the binding
             Binding { name, ty } => ty.data().map(|field| {
                 let node = ValueNode::Destructure {
