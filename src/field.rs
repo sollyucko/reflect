@@ -1,20 +1,6 @@
 use crate::{attr, GlobalPush, Ident, Type, Value, ValueNode, VALUES};
 use std::fmt::{self, Debug, Display};
-use std::vec;
 use syn::Attribute;
-
-#[derive(Debug, Clone)]
-pub struct Fields<T> {
-    pub(crate) fields: vec::IntoIter<Field<T>>,
-}
-
-impl<T> Iterator for Fields<T> {
-    type Item = Field<T>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.fields.next()
-    }
-}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub(crate) enum Accessor {

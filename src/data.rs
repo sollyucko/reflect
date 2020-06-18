@@ -1,4 +1,4 @@
-use crate::{attr, Field, Fields, Value};
+use crate::{attr, Field, Value};
 use std::fmt;
 use std::fmt::Debug;
 use std::marker::PhantomData;
@@ -80,29 +80,18 @@ impl<T: Debug> Debug for StructStruct<T> {
 }
 
 impl<T> Struct<T> {
-    pub fn fields(&self) -> Fields<T>
-    where
-        T: Clone,
-    {
-        let fields = match self {
-            Self::Unit(s) => Vec::new(),
-            Self::Tuple(s) => s.fields.clone(),
-            Self::Struct(s) => s.fields.clone(),
-        };
-        Fields {
-            fields: fields.into_iter(),
+    pub fn fields(&self) -> &[Field<T>] {
+        match self {
+            Self::Unit(s) => &[],
+            Self::Tuple(s) => &s.fields,
+            Self::Struct(s) => &s.fields,
         }
     }
 }
 
 impl<T> TupleStruct<T> {
-    pub fn fields(&self) -> Fields<T>
-    where
-        T: Clone,
-    {
-        Fields {
-            fields: self.fields.clone().into_iter(),
-        }
+    pub fn fields(&self) -> &[Field<T>] {
+        &self.fields
     }
 
     pub fn attrs(&self) -> &[Attribute] {
@@ -111,13 +100,8 @@ impl<T> TupleStruct<T> {
 }
 
 impl<T> StructStruct<T> {
-    pub fn fields(&self) -> Fields<T>
-    where
-        T: Clone,
-    {
-        Fields {
-            fields: self.fields.clone().into_iter(),
-        }
+    pub fn fields(&self) -> &[Field<T>] {
+        &self.fields
     }
 
     pub fn attrs(&self) -> &[Attribute] {

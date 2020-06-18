@@ -357,7 +357,7 @@ pub use crate::data::{
 };
 pub use crate::derive::derive;
 pub use crate::execution::Execution;
-pub use crate::field::{Field, Fields};
+pub use crate::field::Field;
 pub use crate::function::Function;
 pub use crate::generics::{Generics, SynParamMap};
 pub use crate::module::Module;

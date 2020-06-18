@@ -71,7 +71,7 @@ fn test_generics2() {
                 let reciever = make_function.arg(0);
                 match reciever.as_data() {
                     Data::Struct(Struct::Struct(receiver)) => {
-                        let mut fields = receiver.fields();
+                        let mut fields = receiver.fields().iter();
                         let one = fields.next().unwrap().get_value();
                         let two = fields.next().unwrap().get_value();
                         let three = fields.next().unwrap().get_value();

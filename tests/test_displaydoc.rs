@@ -36,7 +36,7 @@ fn display_fmt(f: MakeFunction) -> Value {
             Struct::Unit(_receiver) => unimplemented!(),
             Struct::Tuple(_receiver) => unimplemented!(),
             Struct::Struct(receiver) => {
-                let num_fields = receiver.fields().count();
+                let num_fields = receiver.fields().len();
                 let attrs = receiver.attrs();
                 let doc_comment = extract_doc_comment(attrs);
                 let fmt_string = format!("{} ", doc_comment.as_deref().unwrap_or("{}"));
@@ -47,7 +47,7 @@ fn display_fmt(f: MakeFunction) -> Value {
                     RUNTIME::std::write.INVOKE(&[formatter, f.string(&fmt_string), type_name])
                 };
 
-                for (i, field) in receiver.fields().enumerate() {
+                for (i, field) in receiver.fields().iter().enumerate() {
                     let doc_comment = extract_doc_comment(field.get_attrs());
                     let mut fmt_string = doc_comment.unwrap_or_else(|| "{}".to_owned());
 
